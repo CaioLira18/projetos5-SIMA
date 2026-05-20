@@ -51,7 +51,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     nome = models.CharField(max_length=120)
     email = models.EmailField(unique=True)
     telefone = models.CharField(max_length=20, blank=True)
-    bairro = models.CharField(max_length=80, blank=True)
+    bairro = models.ForeignKey(
+        'areas_risco.Bairro',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='moradores',
+    )
     lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CIDADAO)

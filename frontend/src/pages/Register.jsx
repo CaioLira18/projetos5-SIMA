@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { BairroSelect } from '../components/BairroSelect'
 
 const ESTADO_INICIAL = {
   nome: '',
   email: '',
   telefone: '',
-  bairro: '',
+  bairro: null,
   password: '',
   password_confirm: '',
 }
@@ -81,14 +82,24 @@ export function Register() {
             erro={primeiroErro(erros.telefone)}
             placeholder="81999999999"
           />
-          <Campo
-            label="Bairro"
-            name="bairro"
-            value={form.bairro}
-            onChange={handleChange}
-            erro={primeiroErro(erros.bairro)}
-            placeholder="Ibura, Boa Viagem..."
-          />
+          <div>
+            <label
+              htmlFor="bairro"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Bairro{' '}
+              <span className="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <BairroSelect
+              value={form.bairro}
+              onChange={(id) => setForm({ ...form, bairro: id })}
+            />
+            {primeiroErro(erros.bairro) && (
+              <p className="text-xs text-red-600 mt-1">
+                {primeiroErro(erros.bairro)}
+              </p>
+            )}
+          </div>
           <Campo
             label="Senha"
             name="password"

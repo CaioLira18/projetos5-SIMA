@@ -5,6 +5,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.areas_risco.models import Bairro
+
 User = get_user_model()
 
 
@@ -17,11 +19,12 @@ class CadastroTests(APITestCase):
         self.url = reverse('users:register')
 
     def test_cadastro_cria_usuario_e_retorna_tokens(self):
+        ibura = Bairro.objects.get(slug='ibura')
         payload = {
             'nome': 'Maria da Silva',
             'email': 'maria@example.com',
             'telefone': '81999990000',
-            'bairro': 'Ibura',
+            'bairro': ibura.id,
             'password': 'senha-forte-123',
             'password_confirm': 'senha-forte-123',
         }
@@ -31,7 +34,31 @@ class CadastroTests(APITestCase):
         self.assertIn('refresh', response.data)
         self.assertEqual(response.data['user']['email'], 'maria@example.com')
         self.assertEqual(response.data['user']['role'], User.Role.CIDADAO)
+        self.assertEqual(response.data['user']['bairro']['slug'], 'ibura')
         self.assertTrue(User.objects.filter(email='maria@example.com').exists())
+
+    def test_cadastro_sem_bairro_eh_aceito(self):
+        payload = {
+            'nome': 'Sem bairro',
+            'email': 'sb@example.com',
+            'password': 'senha-forte-123',
+            'password_confirm': 'senha-forte-123',
+        }
+        response = self.client.post(self.url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data['user']['bairro'])
+
+    def test_cadastro_com_bairro_invalido_retorna_400(self):
+        payload = {
+            'nome': 'X',
+            'email': 'x@example.com',
+            'bairro': 99999,
+            'password': 'senha-forte-123',
+            'password_confirm': 'senha-forte-123',
+        }
+        response = self.client.post(self.url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('bairro', response.data)
 
     def test_cadastro_rejeita_senhas_diferentes(self):
         payload = {
@@ -125,11 +152,13 @@ class MeTests(APITestCase):
     """GET/PATCH /api/users/me/"""
 
     def setUp(self):
+        self.boa_viagem = Bairro.objects.get(slug='boa-viagem')
+        self.ibura = Bairro.objects.get(slug='ibura')
         self.user = User.objects.create_user(
             email='ana@example.com',
             password='senha-forte-123',
             nome='Ana',
-            bairro='Boa Viagem',
+            bairro=self.boa_viagem,
         )
         self.url = reverse('users:me')
 
@@ -142,16 +171,18 @@ class MeTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], 'ana@example.com')
-        self.assertEqual(response.data['bairro'], 'Boa Viagem')
+        self.assertEqual(response.data['bairro']['slug'], 'boa-viagem')
 
     def test_me_atualiza_dados_basicos(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.patch(
-            self.url, {'bairro': 'Ibura', 'telefone': '81988887777'}, format='json'
+            self.url,
+            {'bairro_id': self.ibura.id, 'telefone': '81988887777'},
+            format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.bairro, 'Ibura')
+        self.assertEqual(self.user.bairro, self.ibura)
         self.assertEqual(self.user.telefone, '81988887777')
 
     def test_me_nao_permite_trocar_role(self):

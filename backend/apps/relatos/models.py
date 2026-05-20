@@ -17,7 +17,13 @@ class Relato(models.Model):
     )
     lat = models.DecimalField(max_digits=9, decimal_places=6)
     lng = models.DecimalField(max_digits=9, decimal_places=6)
-    bairro = models.CharField(max_length=80, blank=True)
+    bairro = models.ForeignKey(
+        'areas_risco.Bairro',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='relatos',
+    )
     nivel = models.CharField(max_length=10, choices=Nivel.choices)
     descricao = models.TextField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -28,7 +34,7 @@ class Relato(models.Model):
         verbose_name_plural = 'Relatos'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['bairro']),
+            models.Index(fields=['bairro'], name='relatos_bairro_id_idx'),
             models.Index(fields=['-created_at']),
         ]
 

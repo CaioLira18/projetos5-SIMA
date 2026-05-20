@@ -5,11 +5,34 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from apps.areas_risco.models import Bairro
+
 User = get_user_model()
 
 
+class BairroResumoSerializer(serializers.ModelSerializer):
+    """Recorte do bairro embutido em representações de user/relato."""
+
+    class Meta:
+        model = Bairro
+        fields = ['id', 'nome', 'slug']
+
+
 class UserSerializer(serializers.ModelSerializer):
-    """Representação do usuário pra retorno (sem dados sensíveis)."""
+    """Representação do usuário pra retorno (sem dados sensíveis).
+
+    Bairro aparece como objeto aninhado na leitura e como id na escrita —
+    o campo write-only ``bairro_id`` evita ambiguidade no PATCH.
+    """
+
+    bairro = BairroResumoSerializer(read_only=True)
+    bairro_id = serializers.PrimaryKeyRelatedField(
+        source='bairro',
+        queryset=Bairro.objects.all(),
+        allow_null=True,
+        required=False,
+        write_only=True,
+    )
 
     class Meta:
         model = User
@@ -19,6 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'telefone',
             'bairro',
+            'bairro_id',
             'lat',
             'lng',
             'role',
@@ -40,6 +64,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True,
         style={'input_type': 'password'},
+    )
+    bairro = serializers.PrimaryKeyRelatedField(
+        queryset=Bairro.objects.all(),
+        allow_null=True,
+        required=False,
     )
 
     class Meta:

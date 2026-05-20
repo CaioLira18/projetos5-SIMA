@@ -54,7 +54,7 @@ export function Home() {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <Linha label="Email" valor={user?.email} />
             <Linha label="Perfil" valor={ROTULOS_ROLE[user?.role] || user?.role} />
-            <Linha label="Bairro" valor={user?.bairro || '—'} />
+            <Linha label="Bairro" valor={user?.bairro?.nome || '—'} />
             <Linha label="Telefone" valor={user?.telefone || '—'} />
           </dl>
         </section>

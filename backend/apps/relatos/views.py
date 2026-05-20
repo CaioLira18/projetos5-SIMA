@@ -14,7 +14,7 @@ class RelatoListCreateView(generics.ListCreateAPIView):
     POST /api/relatos/ — cria relato em nome do usuário autenticado.
 
     Query params suportados no GET:
-      - ``bairro``: filtro exato (case-insensitive) pelo nome do bairro.
+      - ``bairro``: id (ex: ``12``) ou slug (ex: ``boa-viagem``) do bairro.
       - ``nivel``: ``baixo`` | ``medio`` | ``alto``.
       - ``desde``: ISO 8601 (ex: ``2026-05-20T10:00:00Z``) — apenas relatos
         criados a partir desse instante.
@@ -29,11 +29,15 @@ class RelatoListCreateView(generics.ListCreateAPIView):
         return RelatoSerializer
 
     def get_queryset(self):
-        qs = Relato.objects.select_related('user').all()
+        qs = Relato.objects.select_related('user', 'bairro').all()
         params = self.request.query_params
 
         if bairro := params.get('bairro'):
-            qs = qs.filter(bairro__iexact=bairro.strip())
+            bairro = bairro.strip()
+            if bairro.isdigit():
+                qs = qs.filter(bairro_id=int(bairro))
+            else:
+                qs = qs.filter(bairro__slug__iexact=bairro)
 
         if nivel := params.get('nivel'):
             qs = qs.filter(nivel=nivel)

@@ -13,18 +13,20 @@ import { NivelSelector } from '../components/NivelSelector'
 import { BuscaCEP } from '../components/BuscaCEP'
 import { relatos } from '../lib/relatos'
 import { reverseGeocode } from '../lib/geocoder'
+import { normalizarParaSlug, useBairros } from '../lib/bairros'
 
 const MAX_DESCRICAO = 500
 
 export function Reportar() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { bairros } = useBairros()
 
   // Localização canônica do relato — preenchida pelo GPS ou pelo CEP.
   // Lat/lng nunca aparecem em input pro usuário; só vão pro backend.
   const [localizacao, setLocalizacao] = useState(null) // { lat, lng, endereco, fonte }
 
-  const [bairro, setBairro] = useState(user?.bairro || '')
+  const [bairroId, setBairroId] = useState(user?.bairro?.id || null)
   const [nivel, setNivel] = useState('')
   const [descricao, setDescricao] = useState('')
 
@@ -39,8 +41,10 @@ export function Reportar() {
 
   const aplicarLocalizacao = ({ lat, lng, endereco, bairroSugerido, fonte }) => {
     setLocalizacao({ lat, lng, endereco, fonte })
-    if (bairroSugerido && !bairro) {
-      setBairro(bairroSugerido)
+    if (bairroSugerido && !bairroId) {
+      const slugAlvo = normalizarParaSlug(bairroSugerido)
+      const match = bairros.find((b) => b.slug === slugAlvo)
+      if (match) setBairroId(match.id)
     }
   }
 
@@ -109,7 +113,7 @@ export function Reportar() {
       await relatos.criar({
         lat: localizacao.lat.toFixed(6),
         lng: localizacao.lng.toFixed(6),
-        bairro: bairro.trim(),
+        bairro: bairroId,
         nivel,
         descricao: descricao.trim(),
       })
@@ -264,26 +268,6 @@ export function Reportar() {
                 </p>
               )}
             </fieldset>
-
-            <div>
-              <label
-                htmlFor="bairro"
-                className="block text-sm font-medium text-slate-700 mb-1"
-              >
-                Bairro <span className="text-slate-400 font-normal">(opcional)</span>
-              </label>
-              <input
-                id="bairro"
-                type="text"
-                value={bairro}
-                onChange={(e) => setBairro(e.target.value)}
-                placeholder="Ex: Boa Viagem"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              {erros.bairro && (
-                <p className="text-xs text-red-600 mt-1">{erros.bairro}</p>
-              )}
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">

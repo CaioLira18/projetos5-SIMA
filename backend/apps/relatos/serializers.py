@@ -1,5 +1,8 @@
 from rest_framework import serializers
 
+from apps.areas_risco.models import Bairro
+from apps.users.serializers import BairroResumoSerializer
+
 from .models import Relato
 
 
@@ -10,6 +13,7 @@ class RelatoAutorSerializer(serializers.Serializer):
 
 class RelatoSerializer(serializers.ModelSerializer):
     user = RelatoAutorSerializer(read_only=True)
+    bairro = BairroResumoSerializer(read_only=True)
 
     class Meta:
         model = Relato
@@ -18,6 +22,12 @@ class RelatoSerializer(serializers.ModelSerializer):
 
 
 class RelatoCreateSerializer(serializers.ModelSerializer):
+    bairro = serializers.PrimaryKeyRelatedField(
+        queryset=Bairro.objects.all(),
+        allow_null=True,
+        required=False,
+    )
+
     class Meta:
         model = Relato
         fields = ['lat', 'lng', 'bairro', 'nivel', 'descricao']
@@ -33,7 +43,4 @@ class RelatoCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_descricao(self, value):
-        return value.strip()
-
-    def validate_bairro(self, value):
         return value.strip()

@@ -3,7 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute, PublicOnly } from './components/ProtectedRoute'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
-import { Home } from './pages/Home'
+import { Mapa } from './pages/Mapa'
 import { Reportar } from './pages/Reportar'
 
 function App() {
@@ -31,7 +31,7 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Home />
+                <Mapa />
               </ProtectedRoute>
             }
           />

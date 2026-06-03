@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/areas-risco/', include('apps.areas_risco.urls')),
     path('api/bairros/', include('apps.areas_risco.urls_bairros')),
     path('api/clima/', include('apps.clima.urls')),
+    path('api/dashboard/', include('apps.dashboard.urls')),
 ]
 
 if settings.DEBUG:

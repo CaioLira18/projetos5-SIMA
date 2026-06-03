@@ -99,6 +99,17 @@ export function MenuPerfil() {
             />
           </dl>
 
+          {(user.role === 'defesa_civil' || user.role === 'admin') && (
+            <button
+              type="button"
+              onClick={() => navegar('dashboard')}
+              className="w-full text-sm text-white bg-blue-600 hover:bg-blue-700 border border-blue-600 rounded-lg py-2 transition"
+              role="menuitem"
+            >
+              Painel da Defesa Civil
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => navegar('alertas')}

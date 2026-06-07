@@ -7,6 +7,11 @@ const PERFIL_DEFESA = 'defesa_civil'
 
 const ROLES_OPERADOR = ['defesa_civil', 'admin']
 
+const CREDENCIAIS_DEMO_DEFESA = {
+  email: 'defesa@sima.local',
+  senha: 'defesa123',
+}
+
 export function Login() {
   const { login, logout } = useAuth()
   const navigate = useNavigate()
@@ -168,10 +173,37 @@ export function Login() {
         </form>
 
         {ehOperador ? (
-          <p className="mt-6 text-xs text-center text-slate-500 px-2">
-            Operadores da Defesa Civil são cadastrados pelo administrador do
-            sistema. Se você ainda não tem acesso, fale com a equipe de gestão.
-          </p>
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-2">
+            <div className="flex items-center gap-2 text-blue-900 font-semibold">
+              <span aria-hidden="true">🔑</span>
+              <span>Conta de demonstração</span>
+            </div>
+            <p className="text-slate-700 leading-snug">
+              Pra explorar o painel, o sistema cria automaticamente uma conta
+              de Defesa Civil:
+            </p>
+            <dl className="font-mono text-slate-800 bg-white border border-blue-100 rounded-md p-2 space-y-0.5">
+              <div className="flex gap-2">
+                <dt className="text-slate-500 w-12">email:</dt>
+                <dd className="select-all">{CREDENCIAIS_DEMO_DEFESA.email}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-slate-500 w-12">senha:</dt>
+                <dd className="select-all">{CREDENCIAIS_DEMO_DEFESA.senha}</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(CREDENCIAIS_DEMO_DEFESA.email)
+                setPassword(CREDENCIAIS_DEMO_DEFESA.senha)
+                setErro(null)
+              }}
+              className="text-blue-700 font-medium hover:underline"
+            >
+              Preencher automaticamente
+            </button>
+          </div>
         ) : (
           <p className="mt-6 text-sm text-center text-slate-600">
             Não tem conta?{' '}

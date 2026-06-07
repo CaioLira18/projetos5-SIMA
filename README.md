@@ -28,6 +28,7 @@ O **SIMA** (Sistema Inteligente de Monitoramento e Alerta de Alagamentos) é uma
 
 - **Mapa interativo em tempo real (US01):** Pontos ativos atualizados por polling HTTP (sem WebSockets, dada a instabilidade de rede), para o morador planejar a rota antes de sair.
 - **Severidade tri-nível no marcador (US03):** Hierarquia visual ao estilo Google Maps — **Atenção / Alerta / Crítico** — por cor e ícone, sem ruído técnico.
+- **Modo de demonstração:** em qualquer tela que mostre relatos (mapa do cidadão `/` ou painel da Defesa Civil `/dashboard` e `/dashboard/graficos`), aperte **`Ctrl + Shift + D`** pra ligar/desligar um conjunto de 18 relatos fictícios espalhados por bairros que historicamente alagam em Recife — útil pra apresentar o sistema sem depender de dados reais. Um badge rosa pulsante aparece no canto superior esquerdo enquanto o modo estiver ativo, e os KPIs / gráficos / "Bairros críticos" são recalculados no client pra refletir os dados combinados (real + demo). Mesma combinação desliga.
 
 ### **📊 Dashboard Analítico e Trilha de Dados**
 

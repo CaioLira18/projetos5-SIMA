@@ -31,6 +31,8 @@ import {
   gerarSerieHoraria,
   gerarTopBairros,
 } from '../lib/seriesHorarias'
+// DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
+import { useDemoMode } from '../lib/demoMode'
 
 const JANELA_HORAS = 24
 const INTERVALO_POLLING_MS = 30_000
@@ -78,14 +80,25 @@ export function DashboardGraficos() {
     }
   }, [])
 
-  const serieHoraria = useMemo(
-    () => gerarSerieHoraria(relatos, JANELA_HORAS),
-    [relatos]
-  )
-  const distribuicao = useMemo(() => gerarDistribuicaoNivel(relatos), [relatos])
-  const topBairros = useMemo(() => gerarTopBairros(relatos, 8), [relatos])
+  // DEMO-MODE — mistura relatos falsos quando o modo demo está ativo
+  const { ativo: demoAtivo, relatosFalsos } = useDemoMode()
+  const relatosExibidos = demoAtivo ? [...relatos, ...relatosFalsos] : relatos
+  // FIM DEMO-MODE
 
-  const semDados = !carregandoInicial && relatos.length === 0
+  const serieHoraria = useMemo(
+    () => gerarSerieHoraria(relatosExibidos, JANELA_HORAS),
+    [relatosExibidos]
+  )
+  const distribuicao = useMemo(
+    () => gerarDistribuicaoNivel(relatosExibidos),
+    [relatosExibidos]
+  )
+  const topBairros = useMemo(
+    () => gerarTopBairros(relatosExibidos, 8),
+    [relatosExibidos]
+  )
+
+  const semDados = !carregandoInicial && relatosExibidos.length === 0
 
   return (
     <div className="space-y-4 sm:space-y-6">

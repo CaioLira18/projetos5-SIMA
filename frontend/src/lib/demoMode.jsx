@@ -10,15 +10,44 @@
  * Como remover este "hack" do projeto:
  *   1. Apagar este arquivo.
  *   2. `grep -r DEMO-MODE frontend/src` — todas as referências estão marcadas.
- *   3. Remover as ~4 linhas marcadas em `pages/Mapa.jsx`.
+ *   3. Remover as linhas marcadas em:
+ *        - `pages/Mapa.jsx`              (mapa do cidadão)
+ *        - `pages/Dashboard.jsx`         (painel — visão geral)
+ *        - `pages/DashboardGraficos.jsx` (painel — gráficos)
+ *        - `components/dashboard/DashboardLayout.jsx` (banner no header)
  *
- * Nada além de `pages/Mapa.jsx` deveria importar este módulo.
+ * O estado é compartilhado (módulo singleton) — todas as telas que chamam
+ * `useDemoMode()` sincronizam pelo mesmo atalho de teclado.
  * ============================================================================
  */
 
 import { useEffect, useState } from 'react'
 
 const ATALHO = { ctrl: true, shift: true, key: 'D' }
+
+// Estado compartilhado entre todas as instâncias do hook — assim mapa do
+// cidadão, painel da Defesa Civil e aba de Gráficos respondem juntos ao
+// mesmo atalho e ficam sincronizados mesmo após trocar de rota.
+let ativoGlobal = false
+const subscribers = new Set()
+let listenerInstalado = false
+
+function instalarListener() {
+  if (listenerInstalado || typeof window === 'undefined') return
+  listenerInstalado = true
+  window.addEventListener('keydown', (e) => {
+    const tecla = e.key?.toUpperCase()
+    if (
+      e.ctrlKey === ATALHO.ctrl &&
+      e.shiftKey === ATALHO.shift &&
+      tecla === ATALHO.key
+    ) {
+      e.preventDefault()
+      ativoGlobal = !ativoGlobal
+      subscribers.forEach((cb) => cb(ativoGlobal))
+    }
+  })
+}
 
 // Bairros com coordenadas aproximadas (centróides). Pegamos áreas que
 // historicamente alagam em Recife pra a demo parecer plausível.
@@ -214,29 +243,28 @@ function gerarRelatos() {
 }
 
 export function useDemoMode() {
-  const [ativo, setAtivo] = useState(false)
+  const [ativo, setAtivo] = useState(ativoGlobal)
 
   useEffect(() => {
-    const handler = (e) => {
-      const tecla = e.key?.toUpperCase()
-      if (
-        e.ctrlKey === ATALHO.ctrl &&
-        e.shiftKey === ATALHO.shift &&
-        tecla === ATALHO.key
-      ) {
-        e.preventDefault()
-        setAtivo((v) => !v)
-      }
+    instalarListener()
+    subscribers.add(setAtivo)
+    // Sincroniza com o estado atual caso o toggle tenha rolado entre o
+    // primeiro render e o efeito (paranoia barata).
+    setAtivo(ativoGlobal)
+    return () => {
+      subscribers.delete(setAtivo)
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
   }, [])
 
   const relatosFalsos = ativo ? gerarRelatos() : []
   return { ativo, relatosFalsos }
 }
 
-export function BannerDemo({ ativo }) {
+// Banner agora se autogerencia — basta colocar <BannerDemo /> em qualquer
+// container posicionado (header sticky, main relativo) que ele aparece
+// quando o modo demo está ativo.
+export function BannerDemo() {
+  const { ativo } = useDemoMode()
   if (!ativo) return null
   return (
     <div

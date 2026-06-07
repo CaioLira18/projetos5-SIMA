@@ -84,7 +84,7 @@ export function Mapa() {
         <LegendaNiveis />
 
         {/* DEMO-MODE */}
-        <BannerDemo ativo={demoAtivo} />
+        <BannerDemo />
         {/* FIM DEMO-MODE */}
 
         {carregandoInicial && (

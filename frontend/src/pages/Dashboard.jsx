@@ -21,6 +21,9 @@ import { KpiCard } from '../components/dashboard/KpiCard'
 import { TabelaRelatos } from '../components/dashboard/TabelaRelatos'
 import { dashboard as dashboardService } from '../lib/dashboard'
 import { relatos as relatosService } from '../lib/relatos'
+import { gerarResumoLocal } from '../lib/seriesHorarias'
+// DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
+import { useDemoMode } from '../lib/demoMode'
 
 const JANELA_HORAS = 24
 const INTERVALO_POLLING_MS = 30_000
@@ -73,7 +76,15 @@ export function Dashboard() {
     }
   }, [])
 
-  const ultimoRel = tempoRelativo(resumo?.ultimo_relato_em)
+  // DEMO-MODE — quando ativo, mistura relatos fictícios e recalcula o resumo
+  // localmente pra manter mapa/tabela/KPIs/bairros críticos consistentes
+  // (o backend não conhece os relatos fake).
+  const { ativo: demoAtivo, relatosFalsos } = useDemoMode()
+  const relatosExibidos = demoAtivo ? [...relatos, ...relatosFalsos] : relatos
+  const resumoExibido = demoAtivo ? gerarResumoLocal(relatosExibidos) : resumo
+  // FIM DEMO-MODE
+
+  const ultimoRel = tempoRelativo(resumoExibido?.ultimo_relato_em)
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -89,21 +100,21 @@ export function Dashboard() {
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KpiCard
           rotulo="Hoje"
-          valor={resumo?.totais.hoje ?? '—'}
+          valor={resumoExibido?.totais.hoje ?? '—'}
           sublabel="desde 00:00"
           cor="blue"
         />
         <KpiCard
           rotulo="Últimos 7 dias"
-          valor={resumo?.totais.semana ?? '—'}
+          valor={resumoExibido?.totais.semana ?? '—'}
         />
         <KpiCard
           rotulo="Últimos 30 dias"
-          valor={resumo?.totais.mes ?? '—'}
+          valor={resumoExibido?.totais.mes ?? '—'}
         />
         <KpiCard
           rotulo="Nível alto (24h)"
-          valor={resumo?.por_nivel.alto ?? '—'}
+          valor={resumoExibido?.por_nivel.alto ?? '—'}
           sublabel={ultimoRel ? `último relato ${ultimoRel}` : ''}
           cor="red"
         />
@@ -111,14 +122,14 @@ export function Dashboard() {
 
       <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 sm:gap-6">
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden h-[450px] sm:h-[520px] relative">
-          <MapaRecife relatos={relatos} />
+          <MapaRecife relatos={relatosExibidos} />
           <LegendaNiveis />
         </div>
-        <BairrosCriticos bairros={resumo?.por_bairro ?? []} />
+        <BairrosCriticos bairros={resumoExibido?.por_bairro ?? []} />
       </section>
 
       <section>
-        <TabelaRelatos relatos={relatos} />
+        <TabelaRelatos relatos={relatosExibidos} />
       </section>
 
       {carregandoInicial && (

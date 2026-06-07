@@ -257,7 +257,7 @@ A trilha do 5º CC exige entregáveis específicos que devem viver em `ml/`. **N
 
 - [x] Docker Compose com postgres + backend (Django auto-migrate) + frontend (Vite dev), hot-reload nos dois lados
 - [x] `.env.example` na raiz com vars de DB / Vite / OpenWeather / Tomorrow / WhatsApp / Django
-- [x] **US10** — User customizado (email), JWT (access + refresh + rotação + blacklist), endpoints register/login/refresh/logout/me, admin customizado, tabs Cidadão/Defesa Civil no front, `RoleProtectedRoute`
+- [x] **US10** — User customizado (email), JWT (access + refresh + rotação + blacklist), endpoints register/login/refresh/logout/me, admin customizado, tabs Cidadão/Defesa Civil no front, `RoleProtectedRoute`, seed automático de conta `defesa@sima.local/defesa123` via data migration (credenciais exibidas na própria tela de login)
 - [x] **Bairros** — model + seed migration com bairros oficiais de Recife (`apps.areas_risco`)
 - [x] **US04** — model `Relato` com FK pra Bairro, `nivel`, `descricao`, `imagem` (ImageField + Pillow); ViewSet DRF com CRUD; form React + Leaflet pra escolher ponto; suporte a edição/exclusão (PR #1)
 - [x] **US01** — mapa do cidadão com Leaflet + contornos GeoJSON de bairros + áreas de risco pintadas (círculos geográficos coloridos) + marcadores clicáveis; polling 30s
@@ -299,9 +299,12 @@ Copy-Item .env.example .env
 # Subir tudo (build na 1ª vez, depois reusa imagens)
 docker compose up -d
 
-# Promover um usuário pra Defesa Civil (depois de cadastrar):
+# Uma conta de Defesa Civil é criada automaticamente pelo seed:
+#   email: defesa@sima.local
+#   senha: defesa123
+# As credenciais aparecem na própria tela de login (aba Defesa Civil).
+# Pra acessar o /admin/, ainda dá pra criar um superuser:
 docker compose exec backend python manage.py createsuperuser
-# ...e via /admin/, mudar role pra defesa_civil em outra conta
 
 # Logs em tempo real
 docker compose logs -f backend

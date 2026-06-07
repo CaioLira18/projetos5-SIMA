@@ -14,12 +14,32 @@ class RelatoAutorSerializer(serializers.Serializer):
 class RelatoSerializer(serializers.ModelSerializer):
     user = RelatoAutorSerializer(read_only=True)
     bairro = BairroResumoSerializer(read_only=True)
+    total_denuncias = serializers.IntegerField(source='denuncias.count', read_only=True)
+    ja_denunciou = serializers.SerializerMethodField()
+    total_confirmacoes = serializers.IntegerField(source='confirmacoes.count', read_only=True)  # ← novo
+    ja_confirmou = serializers.SerializerMethodField()  # ← novo
+
+    def get_ja_denunciou(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.denuncias.filter(user=request.user).exists()
+
+    def get_ja_confirmou(self, obj):  # ← novo
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.confirmacoes.filter(user=request.user).exists()
 
     class Meta:
         model = Relato
-        fields = ['id', 'user', 'lat', 'lng', 'bairro', 'nivel', 'descricao', 'imagem', 'created_at']
+        fields = [
+            'id', 'user', 'lat', 'lng', 'bairro',
+            'nivel', 'descricao', 'imagem', 'created_at',
+            'total_denuncias', 'ja_denunciou',
+            'total_confirmacoes', 'ja_confirmou',  # ← novo
+        ]
         read_only_fields = ['id', 'user', 'bairro', 'created_at']
-
 
 class RelatoCreateSerializer(serializers.ModelSerializer):
     bairro = serializers.PrimaryKeyRelatedField(
@@ -44,3 +64,4 @@ class RelatoCreateSerializer(serializers.ModelSerializer):
 
     def validate_descricao(self, value):
         return value.strip()
+    

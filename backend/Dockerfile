@@ -13,5 +13,6 @@ COPY . .
 
 EXPOSE 8000
 
-# Migra o banco antes de subir o servidor de desenvolvimento.
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]
+# Em produção (Render): PORT é injetado pelo Render (padrão 10000).
+# Em dev (docker-compose): o CMD abaixo é sobrescrito pelo campo `command`.
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn sima.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2"]

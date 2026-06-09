@@ -29,6 +29,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-sima}:${POSTGRES_PASSWORD:-sima}@postgres:5432/${POSTGRES_DB:-sima}
     ports:
       - "8000:8000"
+    # Sobrescreve o CMD do Dockerfile: em dev usa runserver com hot-reload.
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     volumes:
       # Bind do código pra refletir mudanças sem rebuild (runserver tem auto-reload).
       - ./backend:/app

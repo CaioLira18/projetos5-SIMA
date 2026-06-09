@@ -15,6 +15,7 @@ import 'leaflet/dist/leaflet.css'
 
 import { AreaRisco } from './AreaRisco'
 import { MarcadorRelato } from './MarcadorRelato'
+import { MarcadorSensor } from './MarcadorSensor'
 import { useBairrosGeoJSON } from '../lib/bairrosGeo'
 
 const CENTRO_RECIFE = [-8.05, -34.9]
@@ -34,7 +35,7 @@ const ESTILO_BAIRRO = {
   fillOpacity: 0.05,
 }
 
-export function MapaRecife({ relatos }) {
+export function MapaRecife({ relatos, sensores = [] }) {
   const { geojson } = useBairrosGeoJSON()
 
   return (
@@ -69,6 +70,10 @@ export function MapaRecife({ relatos }) {
 
       {relatos.map((relato) => (
         <MarcadorRelato key={relato.id} relato={relato} />
+      ))}
+
+      {sensores.map((sensor) => (
+        <MarcadorSensor key={`sensor-${sensor.id}`} sensor={sensor} />
       ))}
     </MapContainer>
   )

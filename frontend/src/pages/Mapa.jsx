@@ -20,6 +20,7 @@ import { LegendaNiveis } from '../components/LegendaNiveis'
 import { MapaRecife } from '../components/MapaRecife'
 import { MenuPerfil } from '../components/MenuPerfil'
 import { relatos as relatosService } from '../lib/relatos'
+import { sensores as sensoresService } from '../lib/sensores'
 // DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
 import { BannerDemo, useDemoMode } from '../lib/demoMode'
 
@@ -28,6 +29,7 @@ const INTERVALO_POLLING_MS = 30_000
 
 export function Mapa() {
   const [relatos, setRelatos] = useState([])
+  const [sensores, setSensores] = useState([])
   const [carregandoInicial, setCarregandoInicial] = useState(true)
   const [erroPolling, setErroPolling] = useState(false)
   const canceladoRef = useRef(false)
@@ -37,11 +39,13 @@ export function Mapa() {
 
     const buscar = async () => {
       try {
-        const lista = await relatosService.listarTodos({
-          ultimas_horas: JANELA_HORAS,
-        })
+        const [lista, listaSensores] = await Promise.all([
+          relatosService.listarTodos({ ultimas_horas: JANELA_HORAS }),
+          sensoresService.listar({ ativo: 'true' }),
+        ])
         if (canceladoRef.current) return
         setRelatos(lista)
+        setSensores(listaSensores)
         setErroPolling(false)
       } catch {
         if (canceladoRef.current) return
@@ -79,7 +83,7 @@ export function Mapa() {
       </header>
 
       <main className="flex-1 relative">
-        <MapaRecife relatos={relatosExibidos} />
+        <MapaRecife relatos={relatosExibidos} sensores={sensores} />
 
         <LegendaNiveis />
 

@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'apps.areas_risco',
     'apps.clima',
     'apps.dashboard',
+    'apps.sensores',
 ]
 
 AUTH_USER_MODEL = 'users.User'

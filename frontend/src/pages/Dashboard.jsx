@@ -24,6 +24,7 @@ import { KpiCard } from '../components/dashboard/KpiCard'
 import { TabelaRelatos } from '../components/dashboard/TabelaRelatos'
 import { dashboard as dashboardService } from '../lib/dashboard'
 import { relatos as relatosService } from '../lib/relatos'
+import { sensores as sensoresService } from '../lib/sensores'
 import { useBairros } from '../lib/bairros'
 import { gerarResumoLocal } from '../lib/seriesHorarias'
 // DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
@@ -54,6 +55,7 @@ export function Dashboard() {
   const [resumo, setResumo] = useState(null)
   const [relatos, setRelatos] = useState([])
   const [gatilhos, setGatilhos] = useState([])
+  const [sensores, setSensores] = useState([])
   const [carregandoInicial, setCarregandoInicial] = useState(true)
   const [erroPolling, setErroPolling] = useState(false)
   const canceladoRef = useRef(false)
@@ -73,15 +75,17 @@ export function Dashboard() {
 
     const buscar = async () => {
       try {
-        const [novoResumo, lista, novosGatilhos] = await Promise.all([
+        const [novoResumo, lista, novosGatilhos, listaSensores] = await Promise.all([
           dashboardService.resumo(),
           relatosService.listarTodos(params),
           dashboardService.alertasBairros(),
+          sensoresService.listar({ ativo: 'true' }),
         ])
         if (canceladoRef.current) return
         setResumo(novoResumo)
         setRelatos(lista)
         setGatilhos(novosGatilhos)
+        setSensores(listaSensores)
         setErroPolling(false)
       } catch {
         if (canceladoRef.current) return
@@ -229,7 +233,7 @@ export function Dashboard() {
 
       <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 sm:gap-6">
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden h-[450px] sm:h-[520px] relative">
-          <MapaRecife relatos={relatosExibidos} />
+          <MapaRecife relatos={relatosExibidos} sensores={sensores} />
           <LegendaNiveis />
         </div>
         <BairrosCriticos bairros={resumoExibido?.por_bairro ?? []} />

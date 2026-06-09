@@ -7,16 +7,21 @@
 
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
+import { useAuth } from '../../contexts/AuthContext'
 import { MenuPerfil } from '../MenuPerfil'
 // DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
 import { BannerDemo } from '../../lib/demoMode'
 
-const ABAS = [
+const ABAS_BASE = [
   { rota: '/dashboard', rotulo: 'Visão geral', end: true },
   { rota: '/dashboard/graficos', rotulo: 'Gráficos', end: false },
 ]
+const ABA_SENSORES = { rota: '/dashboard/sensores', rotulo: 'Sensores IoT', end: false }
 
 export function DashboardLayout() {
+  const { user } = useAuth()
+  const abas = user?.role === 'admin' ? [...ABAS_BASE, ABA_SENSORES] : ABAS_BASE
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-[1100]">
@@ -40,7 +45,7 @@ export function DashboardLayout() {
           className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 -mb-px"
           aria-label="Seções do painel"
         >
-          {ABAS.map((aba) => (
+          {abas.map((aba) => (
             <NavLink
               key={aba.rota}
               to={aba.rota}

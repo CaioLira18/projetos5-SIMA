@@ -7,7 +7,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from .permissions import IsAdminRole
+from .serializers import AdminUserSerializer, LoginSerializer, RegisterSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -80,3 +81,37 @@ class LogoutView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class UsersAdminListView(generics.ListAPIView):
+    """GET /api/users/ — lista todos os usuários (admin only).
+
+    Filtros: ?bairro=<slug>
+    """
+
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        qs = User.objects.select_related('bairro').order_by('nome')
+        bairro = self.request.query_params.get('bairro')
+        if bairro:
+            qs = qs.filter(bairro__slug=bairro)
+        return qs
+
+
+class UserAdminDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET/PATCH/DELETE /api/users/<id>/ — detalhe, edição e exclusão (admin only)."""
+
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminRole]
+    queryset = User.objects.select_related('bairro').all()
+
+    def destroy(self, request, *args, **kwargs):
+        usuario = self.get_object()
+        if usuario.pk == request.user.pk:
+            return Response(
+                {'detail': 'Você não pode excluir sua própria conta.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)

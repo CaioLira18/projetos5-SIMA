@@ -3,6 +3,20 @@
 from rest_framework import permissions
 
 
+class IsAdminRole(permissions.BasePermission):
+    """Permite acesso somente a administradores (role='admin' ou superuser)."""
+
+    message = 'Apenas administradores podem acessar.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not (user and user.is_authenticated):
+            return False
+        if user.is_superuser:
+            return True
+        return getattr(user, 'role', None) == 'admin'
+
+
 class IsDefesaCivilOrAdmin(permissions.BasePermission):
     """Permite acesso somente a operadores da Defesa Civil e administradores.
 

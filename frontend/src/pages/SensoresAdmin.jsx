@@ -12,6 +12,8 @@ import { BuscaCEP } from '../components/BuscaCEP'
 import { useBairros } from '../lib/bairros'
 import { reverseGeocode } from '../lib/geocoder'
 import { TIPOS_SENSOR, iconeSensor, sensores as sensoresService } from '../lib/sensores'
+// DEMO-MODE — remover antes de subir em produção (ver lib/demoMode.jsx)
+import { useDemoMode } from '../lib/demoMode'
 
 const FORM_VAZIO = {
   nome:      '',
@@ -38,6 +40,8 @@ export function SensoresAdmin() {
   const [avisoGPS, setAvisoGPS]     = useState(null)
 
   const { bairros } = useBairros()
+  const { ativo: demoAtivo, sensoresFalsos } = useDemoMode()
+  const listaExibida = demoAtivo ? [...lista, ...sensoresFalsos] : lista
 
   const carregar = async () => {
     try {
@@ -206,7 +210,8 @@ export function SensoresAdmin() {
         <div>
           <h1 className="text-lg font-bold text-slate-800">Gestão de Sensores IoT</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {lista.length} sensor{lista.length !== 1 ? 'es' : ''} cadastrado{lista.length !== 1 ? 's' : ''}
+            {listaExibida.length} sensor{listaExibida.length !== 1 ? 'es' : ''} cadastrado{listaExibida.length !== 1 ? 's' : ''}
+            {demoAtivo && <span className="ml-2 text-xs text-amber-600">(inclui {sensoresFalsos.length} demo)</span>}
           </p>
         </div>
         <button
@@ -428,7 +433,7 @@ export function SensoresAdmin() {
         <div className="text-sm text-slate-500 py-8 text-center">Carregando sensores...</div>
       )}
 
-      {!carregando && lista.length === 0 && !erro && (
+      {!carregando && listaExibida.length === 0 && !erro && (
         <div className="bg-white rounded-xl border border-slate-200 px-6 py-10 text-center text-slate-500 text-sm">
           Nenhum sensor cadastrado ainda.
           <br />
@@ -441,7 +446,7 @@ export function SensoresAdmin() {
         </div>
       )}
 
-      {!carregando && lista.length > 0 && (
+      {!carregando && listaExibida.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -454,53 +459,64 @@ export function SensoresAdmin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {lista.map((sensor) => (
-                <tr key={sensor.id} className="hover:bg-slate-50 transition">
-                  <td className="px-4 py-3 font-medium text-slate-800">
-                    <span className="mr-1.5">{iconeSensor(sensor.tipo)}</span>
-                    {sensor.nome}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">
-                    {sensor.tipo_display}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
-                    {sensor.bairro_nome ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => toggleAtivo(sensor)}
-                      title={sensor.ativo ? 'Clique para desativar' : 'Clique para ativar'}
-                      className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full transition ${
-                        sensor.ativo
-                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${sensor.ativo ? 'bg-emerald-500' : 'bg-slate-400'}`}
-                      />
-                      {sensor.ativo ? 'Ativo' : 'Inativo'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+              {listaExibida.map((sensor) => {
+                const isDemo = String(sensor.id).startsWith('sensor-demo-')
+                return (
+                  <tr key={sensor.id} className="hover:bg-slate-50 transition">
+                    <td className="px-4 py-3 font-medium text-slate-800">
+                      <span className="mr-1.5">{iconeSensor(sensor.tipo)}</span>
+                      {sensor.nome}
+                      {isDemo && (
+                        <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 uppercase tracking-wide">
+                          demo
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 hidden sm:table-cell">
+                      {sensor.tipo_display}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                      {sensor.bairro_nome ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-center">
                       <button
-                        onClick={() => abrirEdicao(sensor)}
-                        className="text-xs text-blue-600 hover:underline font-medium"
+                        onClick={() => !isDemo && toggleAtivo(sensor)}
+                        disabled={isDemo}
+                        title={isDemo ? 'Sensor de demonstração' : sensor.ativo ? 'Clique para desativar' : 'Clique para ativar'}
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full transition ${
+                          sensor.ativo
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        } disabled:cursor-default disabled:hover:bg-emerald-100`}
                       >
-                        Editar
+                        <span className={`w-1.5 h-1.5 rounded-full ${sensor.ativo ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                        {sensor.ativo ? 'Ativo' : 'Inativo'}
                       </button>
-                      <button
-                        onClick={() => excluir(sensor)}
-                        disabled={excluindoId === sensor.id}
-                        className="text-xs text-red-500 hover:underline font-medium disabled:opacity-50"
-                      >
-                        {excluindoId === sensor.id ? '...' : 'Excluir'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {isDemo ? (
+                        <span className="text-xs text-slate-300">—</span>
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => abrirEdicao(sensor)}
+                            className="text-xs text-blue-600 hover:underline font-medium"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => excluir(sensor)}
+                            disabled={excluindoId === sensor.id}
+                            className="text-xs text-red-500 hover:underline font-medium disabled:opacity-50"
+                          >
+                            {excluindoId === sensor.id ? '...' : 'Excluir'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -16,11 +16,14 @@ const ABAS_BASE = [
   { rota: '/dashboard', rotulo: 'Visão geral', end: true },
   { rota: '/dashboard/graficos', rotulo: 'Gráficos', end: false },
 ]
-const ABA_SENSORES = { rota: '/dashboard/sensores', rotulo: 'Sensores IoT', end: false }
+const ABAS_ADMIN = [
+  { rota: '/dashboard/sensores', rotulo: 'Sensores IoT', end: false },
+  { rota: '/dashboard/usuarios', rotulo: 'Usuários', end: false },
+]
 
 export function DashboardLayout() {
   const { user } = useAuth()
-  const abas = user?.role === 'admin' ? [...ABAS_BASE, ABA_SENSORES] : ABAS_BASE
+  const abas = user?.role === 'admin' ? [...ABAS_BASE, ...ABAS_ADMIN] : ABAS_BASE
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

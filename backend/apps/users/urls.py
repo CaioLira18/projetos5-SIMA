@@ -13,4 +13,6 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('me/', views.MeView.as_view(), name='me'),
+    path('', views.UsersAdminListView.as_view(), name='list'),
+    path('<int:pk>/', views.UserAdminDetailView.as_view(), name='detail'),
 ]

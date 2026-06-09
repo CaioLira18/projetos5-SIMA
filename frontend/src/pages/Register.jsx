@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { BairroSelect } from '../components/BairroSelect'
+import { TelefoneInput } from '../components/TelefoneInput'
 
 const ESTADO_INICIAL = {
   nome: '',
@@ -74,14 +75,18 @@ export function Register() {
             erro={primeiroErro(erros.email)}
             required
           />
-          <Campo
-            label="Telefone (WhatsApp)"
-            name="telefone"
-            value={form.telefone}
-            onChange={handleChange}
-            erro={primeiroErro(erros.telefone)}
-            placeholder="81999999999"
-          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Telefone (WhatsApp){' '}
+              <span className="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <TelefoneInput
+              id="telefone"
+              value={form.telefone}
+              onChange={(raw) => setForm({ ...form, telefone: raw })}
+              erro={primeiroErro(erros.telefone)}
+            />
+          </div>
           <div>
             <label
               htmlFor="bairro"

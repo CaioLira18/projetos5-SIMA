@@ -10,6 +10,8 @@ import { Alertas } from './pages/Alertas'
 import { Dashboard } from './pages/Dashboard'
 import { DashboardGraficos } from './pages/DashboardGraficos'
 import { SensoresAdmin } from './pages/SensoresAdmin'
+import { UsuariosAdmin } from './pages/UsuariosAdmin'
+import { Perfil } from './pages/Perfil'
 
 /**
  * Operador (defesa_civil/admin) tem o painel como tela inicial — quem cai
@@ -85,7 +87,23 @@ function App() {
                 </RoleProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/usuarios"
+              element={
+                <RoleProtectedRoute roles={['admin']}>
+                  <UsuariosAdmin />
+                </RoleProtectedRoute>
+              }
+            />
           </Route>
+          <Route
+            path="/perfil"
+            element={
+              <ProtectedRoute>
+                <Perfil />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

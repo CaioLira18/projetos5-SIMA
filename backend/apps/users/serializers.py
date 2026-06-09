@@ -96,6 +96,28 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(password=password, **validated_data)
 
 
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Serializer para o admin gerenciar usuários — role é editável."""
+
+    bairro = BairroResumoSerializer(read_only=True)
+    bairro_id = serializers.PrimaryKeyRelatedField(
+        source='bairro',
+        queryset=Bairro.objects.all(),
+        allow_null=True,
+        required=False,
+        write_only=True,
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'nome', 'email', 'telefone',
+            'bairro', 'bairro_id', 'lat', 'lng',
+            'role', 'is_active', 'date_joined',
+        ]
+        read_only_fields = ['id', 'date_joined']
+
+
 class LoginSerializer(TokenObtainPairSerializer):
     """Login JWT que devolve os tokens + dados do usuário autenticado.
 

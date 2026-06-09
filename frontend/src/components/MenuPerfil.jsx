@@ -112,6 +112,24 @@ export function MenuPerfil() {
 
           <button
             type="button"
+            onClick={() => navegar('')}
+            className="w-full text-sm text-slate-700 hover:text-slate-900 border border-slate-300 rounded-lg py-2 hover:bg-slate-100 transition"
+            role="menuitem"
+          >
+            Ver mapa
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navegar('perfil')}
+            className="w-full text-sm text-slate-700 hover:text-slate-900 border border-slate-300 rounded-lg py-2 hover:bg-slate-100 transition"
+            role="menuitem"
+          >
+            Editar perfil
+          </button>
+
+          <button
+            type="button"
             onClick={() => navegar('alertas')}
             className="w-full text-sm text-slate-700 hover:text-slate-900 border border-slate-300 rounded-lg py-2 hover:bg-slate-100 transition"
             role="menuitem"

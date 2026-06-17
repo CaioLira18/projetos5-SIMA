@@ -294,16 +294,187 @@ Todas as rotas vivem sob `/api/`:
 
 ---
 
-## 7. Plano da Trilha de Análise de Dados (Pendente)
+## 7. Trilha de Análise e Visualização de Dados (AVD)
 
-A trilha do 5º CC exige entregáveis específicos que devem viver em `ml/`. **Nada disso foi começado ainda** — pasta criada com `requirements-ml.txt` mas notebooks/streamlit vazios.
+O PDF `context/requisitos_avd.pdf` lista **10 entregáveis CC** que cobrem o ciclo completo: planejamento → dados → EDA → modelos → dashboard → documentação. Todos vivem em `ml/`. A ferramenta de publicação escolhida é **Streamlit** (já no stack, já em `requirements-ml.txt`).
 
-1. **Plano de análise** — perguntas investigativas documentadas (markdown).
-2. **EDA notebook** — distribuição de relatos por bairro, correlação chuva×nível, séries temporais.
-3. **Modelo de regressão** — treino, métricas (MAE, RMSE, R²), serialização (`joblib`).
-4. **Modelo classificador** — risco binário (alagará / não alagará nas próximas N horas), métricas de classificação (matriz de confusão, curva ROC).
-5. **Streamlit dashboard** — filtros, gráficos, modelo treinado direto.
-6. **Documentação das decisões analíticas** — ADRs simples ou seção no README.
+---
+
+### 7.1. Mapeamento Entregáveis CC → Tarefas SIMA
+
+| Entregável CC | Tarefa | Arquivo principal | Status |
+| --- | --- | --- | --- |
+| Plano de análise | AVD-01 | `ml/docs/01_plano_analise.md` | ⏳ |
+| Plano de preparação dos dados | AVD-02 | `ml/docs/02_plano_dados.md` | ⏳ |
+| EDA com visualizações | AVD-03 | `ml/notebooks/01_eda.ipynb` | ⏳ |
+| Notebook de regressão | AVD-04 | `ml/notebooks/02_regressao.ipynb` | ⏳ |
+| Visualizações de classificadores | AVD-05 | `ml/notebooks/03_classificador.ipynb` | ⏳ |
+| Primeira versão do dashboard interativo | AVD-06 | `ml/streamlit_app/` (v1) | ⏳ |
+| Proposta de integração visual | AVD-07 | `ml/docs/03_proposta_visual.md` | ⏳ |
+| Dashboard consolidado | AVD-08 | `ml/streamlit_app/` (completo) | ⏳ |
+| Versão quase final | AVD-09 | `ml/streamlit_app/` (refinado) | ⏳ |
+| Documentação final | AVD-10 | `ml/docs/04_documentacao_final.md` | ⏳ |
+
+---
+
+### 7.2. Estratégia de Dados
+
+O sistema está em produção há pouco tempo, então o banco real tem poucos relatos. A análise combina três fontes:
+
+| Fonte | O que fornece | Como usar |
+| --- | --- | --- |
+| **PostgreSQL (real)** | Relatos reais, bairros, alertas_bairro, sensores | Leitura direta via `psycopg2` + `pandas.read_sql` |
+| **Dados simulados históricos** | 6 meses de relatos com sazonalidade realista (mais alagamentos em abril-agosto, picos em horários de chuva) | Script `ml/scripts/gerar_dados_historicos.py` insere no Postgres |
+| **Precipitação sintética** | Série temporal de chuva por bairro (correlacionada com os relatos simulados) | CSV gerado pelo mesmo script, salvo em `ml/data/precipitacao_historica.csv` |
+
+**Por que dados simulados?** A integração meteorológica real (OpenWeather) ainda não foi codada, e o banco novo não tem volume suficiente pra análise estatística. Dados simulados com distribuição realista permitem demonstrar o pipeline completo sem bloquear a trilha. A documentação final declarará explicitamente as fontes.
+
+---
+
+### 7.3. Perguntas de Análise (AVD-01)
+
+As cinco perguntas que guiam toda a análise:
+
+1. **Distribuição temporal:** Qual é o padrão de alagamentos em Recife por hora do dia, dia da semana e mês? Existe sazonalidade?
+2. **Concentração geográfica:** Quais bairros concentram mais ocorrências e qual o nível médio de severidade por bairro?
+3. **Correlação chuva × relatos:** Existe correlação estatisticamente relevante entre precipitação acumulada e volume de relatos em uma janela de tempo?
+4. **Tendência por regressão:** É possível prever o número de relatos nas próximas horas com base em precipitação e histórico recente?
+5. **Classificação de risco:** Um classificador simples consegue prever o nível de risco de um bairro (Atenção / Alerta / Crítico) com base em features derivadas do histórico e da chuva?
+
+---
+
+### 7.4. Estrutura de Pastas `ml/` (alvo final)
+
+```text
+ml/
+├── requirements-ml.txt            # pandas, sklearn, matplotlib, seaborn, jupyter, streamlit, psycopg2
+├── docs/
+│   ├── 01_plano_analise.md        # AVD-01 — perguntas, métricas, justificativa de gráficos
+│   ├── 02_plano_dados.md          # AVD-02 — fontes, formatos, limpeza, normalização
+│   ├── 03_proposta_visual.md      # AVD-07 — estrutura do Streamlit, organização por seções
+│   └── 04_documentacao_final.md   # AVD-10 — histórico de decisões, insights, capturas
+├── notebooks/
+│   ├── 01_eda.ipynb               # AVD-03 — EDA: distribuições, correlações, séries temporais
+│   ├── 02_regressao.ipynb         # AVD-04 — regressão linear, dispersão, resíduos
+│   └── 03_classificador.ipynb     # AVD-05 — Random Forest simples, matriz confusão, ROC
+├── scripts/
+│   └── gerar_dados_historicos.py  # seed: 6 meses de relatos simulados + CSV precipitação
+├── streamlit_app/
+│   ├── app.py                     # entrada principal (st.set_page_config + navegação)
+│   ├── pages/
+│   │   ├── 01_visao_geral.py      # KPIs, mapa de calor por bairro, distribuição por nível
+│   │   ├── 02_temporal.py         # séries temporais, sazonalidade, padrão por hora/dia
+│   │   ├── 03_correlacao.py       # scatter chuva × relatos, linha de tendência, resíduos
+│   │   ├── 04_modelos.py          # matriz de confusão, ROC, métricas do classificador
+│   │   └── 05_sobre.py            # documentação analítica inline
+│   └── utils/
+│       ├── db.py                  # conexão PostgreSQL via psycopg2 (lê DB_URL do env)
+│       └── modelos.py             # carrega .pkl serializados de ml/models/
+├── data/                          # gitignored — precipitacao_historica.csv gerado pelo script
+└── models/                        # gitignored — regressao.pkl, classificador.pkl
+```
+
+---
+
+### 7.5. Serviço Streamlit no Docker Compose
+
+Adicionar quarto serviço `streamlit` ao `docker-compose.yml`:
+
+- Imagem base: `python:3.12-slim`
+- Porta: `8501:8501`
+- Volume: `./ml:/app` (hot-reload no desenvolvimento)
+- Depende de: `postgres`
+- Variável de ambiente: `DATABASE_URL=postgresql://sima:sima@postgres:5432/sima`
+- Comando: `streamlit run /app/streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0`
+
+URL local após subir: `http://localhost:8501`
+
+---
+
+### 7.6. Detalhamento das Tarefas
+
+#### AVD-01 — Plano de Análise (`ml/docs/01_plano_analise.md`)
+
+Documento markdown com:
+
+- As 5 perguntas de análise (§7.3) com hipóteses associadas
+- Tabela: pergunta → métrica esperada → tipo de gráfico → justificativa perceptual (ex.: série temporal usa linha porque mapeia ordem temporal; distribuição categórica usa barra horizontal porque facilita comparação de magnitudes)
+- Princípios de design visual aplicados: contraste de cor para severidade (vermelho/âmbar/verde), hierarquia tipográfica, uso de espaço negativo
+
+#### AVD-02 — Plano de Preparação dos Dados (`ml/docs/02_plano_dados.md`)
+
+Documento markdown com:
+
+- Tabela de fontes: PostgreSQL real (relatos, bairros, alertas_bairro) + simulados (script Python) + CSV precipitação sintética
+- Estratégia de limpeza: tratar nulos em `bairro_id`, remover relatos duplicados num raio de 50m em janela de 5min, normalizar `nivel` para ordinal (0/1/2)
+- Variáveis derivadas: `hora_do_dia`, `dia_semana`, `relatos_na_janela_1h`, `precipitacao_acumulada_3h`, `nivel_maximo_bairro_6h`
+- Justificativa por variável: por que cada transformação é necessária
+
+#### AVD-03 — EDA (`ml/notebooks/01_eda.ipynb`)
+
+Seções do notebook:
+
+1. Conexão ao PostgreSQL e carregamento
+2. Estatísticas descritivas (count, mean, std, quartis por variável)
+3. Distribuição de relatos por nível (barplot)
+4. Top 10 bairros por volume de relatos (barplot horizontal)
+5. Distribuição temporal: relatos por hora do dia (barplot), por dia da semana (heatmap), por mês (linha)
+6. Correlação: matrix de correlação (heatmap seaborn) entre features numéricas
+7. Análise multivariada: scatter precipitação × relatos colorido por nível
+8. Interpretação textual em cada seção (células markdown)
+
+#### AVD-04 — Regressão (`ml/notebooks/02_regressao.ipynb`)
+
+Seções:
+
+1. Feature engineering: `precipitacao_acumulada_3h`, `hora_do_dia`, `relatos_janela_anterior`
+2. Regressão Linear Simples: precipitação → número de relatos nas próximas 2h
+3. Gráficos: scatter com linha de tendência (matplotlib), intervalo de confiança
+4. Análise de resíduos: histograma + QQ-plot
+5. Métricas: MAE, RMSE, R²
+6. Regressão Múltipla com todas as features → comparação de R²
+7. Serialização do modelo: `joblib.dump` em `ml/models/regressao.pkl`
+
+#### AVD-05 — Classificador (`ml/notebooks/03_classificador.ipynb`)
+
+Seções:
+
+1. Definição do target: `nivel_risco_bairro` (0=atenção, 1=alerta, 2=crítico)
+2. Features: `relatos_1h`, `relatos_3h`, `precipitacao_3h`, `hora_do_dia`, `dia_semana`
+3. Split treino/teste (80/20), estratificado por classe
+4. Modelo: `RandomForestClassifier` (simples, interpretável, adequado ao volume de dados)
+5. Visualizações obrigatórias:
+   - Matriz de confusão (heatmap normalizado)
+   - Relatório: acurácia, precisão, recall, F1-score por classe
+   - Curva ROC multi-classe (One-vs-Rest) com AUC
+   - Curva Precision-Recall
+   - Importância de features (barplot)
+6. Análise textual das métricas e implicações práticas (ex.: o que significa alta precisão mas baixo recall para "crítico"?)
+7. Serialização: `joblib.dump` em `ml/models/classificador.pkl`
+
+#### AVD-06 / AVD-08 / AVD-09 — Streamlit Dashboard (v1 → consolidado → quase final)
+
+O dashboard tem 5 páginas (ver estrutura §7.4). A evolução segue três marcos:
+
+- **v1 (AVD-06):** Páginas 01 e 02 funcionando com dados carregados, filtros de bairro e período, narrativa visual básica
+- **Consolidado (AVD-08):** Todas as 5 páginas completas, modelos `.pkl` integrados, filtros globais na sidebar, elementos interpretativos em cada seção
+- **Quase final (AVD-09):** Refinamentos de UX (cores consistentes com o padrão SIMA verde/âmbar/vermelho, fontes, mobile-friendly), feedback incorporado, sem erros de carregamento
+
+#### AVD-07 — Proposta de Integração Visual (`ml/docs/03_proposta_visual.md`)
+
+Documento com:
+
+- Diagrama da estrutura de páginas do Streamlit
+- Paleta de cores (consistente com o frontend React: `#16a34a` atenção, `#d97706` alerta, `#dc2626` crítico)
+- Hierarquia visual: título da página → métrica KPI → gráfico principal → gráfico de detalhe → texto interpretativo
+- Decisão de ferramenta: Streamlit (justificativa: já no stack, próximo dos notebooks, Python nativo, sem curva de aprendizado extra)
+
+#### AVD-10 — Documentação Final (`ml/docs/04_documentacao_final.md`)
+
+- Histórico de decisões analíticas (ex.: por que Random Forest e não Logistic Regression; por que janela de 3h e não 1h)
+- Capturas de tela das páginas do Streamlit
+- Síntese dos 5 principais insights gerados
+- Limitações e trabalhos futuros (dados simulados vs reais, integração OpenWeather)
 
 ---
 
@@ -325,13 +496,35 @@ A trilha do 5º CC exige entregáveis específicos que devem viver em `ml/`. **N
 - [x] **US05** — `apps/alertas/whatsapp.py`: suporta Twilio (Content Template + session message) e Meta Cloud API; webhook GET/POST para verificação e recebimento de mensagens WA
 - [x] **US09** — model `Sensor` com tipo/lat/lng/bairro/ativo; CRUD via DRF (`/api/sensores/`); página `SensoresAdmin` em `/dashboard/sensores` (role=admin); `MarcadorSensor` no mapa
 
-### 8.2. ⏳ Trilha de dados (pendente)
+### 8.2. ⏳ Trilha AVD (pendente)
 
-- [ ] Notebook `01_eda.ipynb` rodando contra o Postgres
-- [ ] Modelo de regressão treinado + serializado (joblib)
-- [ ] Modelo classificador (risco binário) + métricas (matriz de confusão, curva ROC)
-- [ ] Streamlit dashboard apontando pro mesmo banco
-- [ ] Integração OpenWeather coletando precipitação (app `clima` reservado)
+#### Fase 1 — Fundação de dados (pré-requisito de tudo)
+
+- [ ] Script `ml/scripts/gerar_dados_historicos.py` — gera 6 meses de relatos simulados + `precipitacao_historica.csv`
+- [ ] Serviço `streamlit` adicionado ao `docker-compose.yml` (porta 8501)
+- [ ] `ml/streamlit_app/utils/db.py` — conector PostgreSQL via `DATABASE_URL`
+
+#### Fase 2 — Documentos de planejamento
+
+- [ ] AVD-01: `ml/docs/01_plano_analise.md`
+- [ ] AVD-02: `ml/docs/02_plano_dados.md`
+- [ ] AVD-07: `ml/docs/03_proposta_visual.md`
+
+#### Fase 3 — Notebooks
+
+- [ ] AVD-03: `ml/notebooks/01_eda.ipynb` — EDA completa com gráficos e interpretação
+- [ ] AVD-04: `ml/notebooks/02_regressao.ipynb` — regressão + resíduos + serialização
+- [ ] AVD-05: `ml/notebooks/03_classificador.ipynb` — Random Forest + matriz confusão + ROC
+
+#### Fase 4 — Streamlit
+
+- [ ] AVD-06: `ml/streamlit_app/` v1 — páginas Visão Geral e Temporal funcionando com filtros
+- [ ] AVD-08: Dashboard consolidado — todas as 5 páginas + modelos `.pkl` integrados
+- [ ] AVD-09: Versão quase final — paleta de cores SIMA, feedback incorporado, sem erros
+
+#### Fase 5 — Documentação
+
+- [ ] AVD-10: `ml/docs/04_documentacao_final.md` — decisões, capturas, insights, limitações
 
 ### 8.3. Outras pendências técnicas
 
